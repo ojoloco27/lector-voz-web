@@ -2,415 +2,365 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KAIJU RUSH: Evolution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>KAIJU 3D: City Smasher</title>
     <style>
-        /* ESTILOS BASE E INTERFAZ */
-        body {
-            margin: 0; overflow: hidden; background-color: #87CEEB;
-            font-family: 'Arial Black', 'Arial Bold', sans-serif;
-            touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent;
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: white;
+            font-family: 'Arial Black', sans-serif; pointer-events: none;
+            text-shadow: 2px 2px 0 #000;
         }
-        #game-container { position: relative; width: 100%; height: 100vh; }
-        canvas { display: block; width: 100%; height: 100%; }
-
-        /* UI SUPERIOR (Nivel y XP) */
-        #top-ui {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            display: flex; flex-direction: column; gap: 5px; pointer-events: none;
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px; border: 2px solid red; border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none;
+            background: rgba(255, 0, 0, 0.3);
         }
-        .stat-bar-container {
-            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 15px;
-            color: white; display: flex; align-items: center;
+        #controls-hint {
+            position: absolute; bottom: 20px; width: 100%; text-align: center;
+            color: white; font-family: sans-serif; font-weight: bold; text-shadow: 1px 1px 0 #000;
+            pointer-events: none;
         }
-        #level-badge {
-            background: #f1c40f; color: #2c3e50; width: 40px; height: 40px;
-            border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-size: 20px; border: 3px solid white; margin-right: 10px; box-shadow: 0 4px 0 #c27c0e;
-        }
-        #xp-progress-bg { flex-grow: 1; height: 20px; background: #34495e; border-radius: 10px; overflow: hidden; position: relative;}
-        #xp-progress-fill { height: 100%; width: 0%; background: linear-gradient(to right, #2ecc71, #00b894); transition: width 0.3s; }
-        #xp-text { position: absolute; width: 100%; text-align: center; top: 0; line-height: 20px; font-size: 12px; text-shadow: 1px 1px 2px black;}
-        #score { font-size: 24px; color: white; text-shadow: 3px 3px 0 #000; margin-top: 5px;}
-
-        /* PANTALLA DE MEJORAS (LEVEL UP) */
-        #upgrade-screen {
-            display: none; /* Oculto al inicio */
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 50;
-            flex-direction: column; justify-content: center; align-items: center;
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
-        #upgrade-screen h2 { color: #f1c40f; font-size: 36px; text-shadow: 3px 3px 0 #e67e22; margin-bottom: 30px; text-align: center;}
-        .upgrade-card {
-            background: linear-gradient(to bottom, #3498db, #2980b9);
-            width: 80%; max-width: 300px; margin: 10px; padding: 20px;
-            border-radius: 20px; border: 4px solid white; color: white;
-            text-align: center; cursor: pointer; box-shadow: 0 8px 0 #1a5276;
-            transform: scale(1); transition: transform 0.1s;
-        }
-        .upgrade-card:active { transform: scale(0.95); box-shadow: 0 4px 0 #1a5276; }
-        .card-icon { font-size: 50px; margin-bottom: 10px; }
-        .card-title { font-size: 20px; margin-bottom: 5px; color: #f1c40f;}
-        .card-desc { font-size: 14px; }
-
-        /* PANTALLA INICIO */
-        #start-screen {
-             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-             background: rgba(0,0,0,0.7); color: white; display: flex;
-             flex-direction: column; justify-content: center; align-items: center; z-index: 40;
-        }
-        .big-btn {
-            background: #e74c3c; border: none; padding: 20px 40px; font-size: 28px; color: white;
-            border-radius: 50px; border: 4px solid white; font-family: inherit;
-            box-shadow: 0 10px 0 #c0392b; cursor: pointer; animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); }}
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        
-        <div id="top-ui">
-            <div class="stat-bar-container">
-                <div id="level-badge">1</div>
-                <div id="xp-progress-bg">
-                    <div id="xp-progress-fill"></div>
-                    <div id="xp-text">XP: 0 / 10</div>
-                </div>
-            </div>
-            <div id="score">🏆 Puntos: 0</div>
-        </div>
 
-        <div id="start-screen">
-            <h1 style="font-size: 50px; color: #f1c40f; text-shadow: 4px 4px 0 black; text-align: center;">KAIJU RUSH<br>EVOLUTION</h1>
-            <p style="font-size: 20px;">¡TOCA RÁPIDO PARA DESTRUIR!</p>
-            <button class="big-btn" onclick="startGame()">¡EMPEZAR!</button>
-        </div>
-
-        <div id="upgrade-screen">
-            <h2>¡SUBISTE DE NIVEL!</h2>
-            <p style="color:white;">Elige una mejora:</p>
-            <div id="cards-container">
-                </div>
-        </div>
+    <div id="ui">
+        <h1 style="margin:0; font-size: 30px;">🦖 KAIJU 3D</h1>
+        <p style="margin:0; font-size: 20px;">Edificios: <span id="score">0</span></p>
     </div>
+    
+    <div id="crosshair"></div>
+    <div id="controls-hint">PC: WASD Mover | CLICK Disparar <br> MÓVIL: Toca lados para girar | Toca centro para avanzar</div>
 
     <script>
-        // --- CONFIGURACIÓN Y VARIABLES GLOBALES ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        let canvasWidth, canvasHeight;
-        
-        let gameState = {
-            running: false, paused: false,
-            score: 0, level: 1, xp: 0, xpToNextLevel: 10,
-            gameSpeed: 4, frame: 0
-        };
-
-        // EL MONSTRUO 🦖
-        let monster = {
-            x: 50, yBase: 0, y: 0, size: 110, emoji: "🦖",
-            attackPower: 1, // Daño por golpe
-            attackRange: 120, // Qué tan lejos pega
-            hasFire: false, // Mejora de fuego
-            hasMegaBoom: false, // Mejora de explosión grande
-            isAttacking: false, attackCooldown: 0
-        };
-
+        // --- CONFIGURACIÓN BÁSICA ---
+        let scene, camera, renderer;
+        let bullets = [];
         let buildings = [];
-        let particles = []; // Efectos visuales y textos flotantes
-        let shakeIntensity = 0; // Para el temblor de pantalla
+        let particles = [];
+        let civilians = [];
+        let score = 0;
+        
+        // Variables de movimiento
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let canShoot = true;
+        
+        // Configuración del Jugador (Dino)
+        let player = { height: 15, speed: 0.8, rotationSpeed: 0.03 };
 
-        // --- BASE DE DATOS DE MEJORAS ---
-        const upgradePool = [
-            {id: 'big_size', icon: '🍄', title: '¡CRECER!', desc: 'Tamaño +20%. Rango de ataque aumenta.'},
-            {id: 'more_power', icon: '💪', title: 'FUERZA BRUTA', desc: 'Daño de ataque +1. Destruye más rápido.'},
-            {id: 'fire_breath', icon: '🔥', title: 'ALIENTO DE FUEGO', desc: 'Tus ataques queman a los edificios cercanos.'},
-            {id: 'fast_legs', icon: '⚡', title: 'VELOCIDAD', desc: 'El juego va más rápido (Más puntos).'},
-            {id: 'mega_boom', icon: '💣', title: 'MEGA PISOTÓN', desc: 'Tus golpes crean explosiones gigantes.'}
-        ];
+        function init() {
+            // 1. Escena y Cielo
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Cielo Azul
+            scene.fog = new THREE.Fog(0x87CEEB, 20, 150); // Niebla para profundidad
 
-        // --- INICIO Y BUCLE PRINCIPAL ---
-        function resizeCanvas() {
-            canvasWidth = window.innerWidth; canvasHeight = window.innerHeight;
-            canvas.width = canvasWidth; canvas.height = canvasHeight;
-            monster.yBase = canvasHeight - 150;
+            // 2. Cámara (Ojos del Dino)
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = player.height; // Altura de gigante
+
+            // 3. Renderizador
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true; // Sombras activadas
+            document.body.appendChild(renderer.domElement);
+
+            // 4. Luz (Sol)
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6); // Luz suave
+            scene.add(ambientLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(50, 100, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+
+            // 5. Suelo (Ciudad)
+            const floorGeometry = new THREE.PlaneGeometry(1000, 1000);
+            const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // 6. Generar Ciudad (Edificios)
+            generateCity();
+
+            // 7. Generar Civiles (Puntos que corren)
+            generateCivilians();
+
+            // 8. Eventos de Control
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', shoot);
+            document.addEventListener('touchstart', handleTouch);
+            window.addEventListener('resize', onWindowResize);
+
+            // Arma visual (Bazooka)
+            createBazooka();
+
+            animate();
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            gameState.running = true; gameLoop();
+        // --- GENERADOR DE CIUDAD ---
+        function generateCity() {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            
+            // Colores de edificios
+            const colors = [0x95a5a6, 0xbdc3c7, 0x34495e, 0xf1c40f, 0xe74c3c, 0x3498db];
+
+            for (let i = 0; i < 150; i++) {
+                // Elegir color y tamaño
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const material = new THREE.MeshStandardMaterial({ color: color });
+                const building = new THREE.Mesh(geometry, material);
+
+                // Tamaño aleatorio (Rascacielos vs Casas)
+                const width = 5 + Math.random() * 10;
+                const depth = 5 + Math.random() * 10;
+                const height = 10 + Math.random() * 40; // Altura
+
+                building.scale.set(width, height, depth);
+
+                // Posición aleatoria (evitando el centro donde empezamos)
+                let x = (Math.random() - 0.5) * 400;
+                let z = (Math.random() - 0.5) * 400;
+                
+                // Zona segura inicial
+                if (Math.abs(x) < 20 && Math.abs(z) < 20) x += 30;
+
+                building.position.set(x, height / 2, z);
+                building.castShadow = true;
+                building.receiveShadow = true;
+
+                // Datos propios del edificio para lógica
+                building.userData = { hp: 3, type: 'building' }; 
+
+                scene.add(building);
+                buildings.push(building);
+            }
         }
 
-        function gameLoop() {
-            if (!gameState.running || gameState.paused) return;
+        // --- BAZOOKA VISUAL ---
+        let bazooka;
+        function createBazooka() {
+            const geometry = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
+            const material = new THREE.MeshStandardMaterial({ color: 0x2c3e50 });
+            bazooka = new THREE.Mesh(geometry, material);
+            bazooka.rotation.x = Math.PI / 2;
+            bazooka.position.set(2, -1, -3); // A la derecha y abajo de la cámara
+            camera.add(bazooka); // Pegar a la cámara
+            scene.add(camera);
+        }
 
-            // Temblor de pantalla
-            let shakeX = 0, shakeY = 0;
-            if(shakeIntensity > 0) {
-                shakeX = (Math.random()-0.5)*shakeIntensity; shakeY = (Math.random()-0.5)*shakeIntensity;
-                shakeIntensity *= 0.9; // Reduce el temblor
-                if(shakeIntensity < 0.5) shakeIntensity = 0;
+        // --- DISPARAR ---
+        function shoot() {
+            if(!canShoot) return;
+            
+            // Efecto retroceso
+            bazooka.position.z += 0.5;
+            setTimeout(() => bazooka.position.z -= 0.5, 100);
+
+            // Crear Cohete
+            const geometry = new THREE.SphereGeometry(0.8, 8, 8);
+            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Rojo brillante
+            const bullet = new THREE.Mesh(geometry, material);
+
+            // Posición inicial (punta del bazooka)
+            bullet.position.copy(camera.position);
+            bullet.position.y -= 1; // Ajuste leve
+            
+            // Dirección
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            bullet.userData = { velocity: direction.multiplyScalar(2) }; // Velocidad rápida
+
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+
+        // --- CIVILES ---
+        function generateCivilians() {
+            const geo = new THREE.SphereGeometry(0.5, 4, 4);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            
+            for(let i=0; i<50; i++) {
+                const civ = new THREE.Mesh(geo, mat);
+                civ.position.set((Math.random()-0.5)*100, 1, (Math.random()-0.5)*100);
+                civ.userData = { speed: 0.2, direction: new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize() };
+                civilians.push(civ);
+                scene.add(civ);
+            }
+        }
+
+        // --- CONTROLES ---
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+            }
+        }
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+            }
+        }
+        function handleTouch(e) {
+            // Control simple táctil
+            if(e.touches[0].clientX > window.innerWidth / 2) shoot();
+            else {
+                // Avanzar simple al tocar izquierda
+                moveForward = true;
+                setTimeout(()=> moveForward=false, 200);
+            }
+        }
+
+        // --- FÍSICA Y LÓGICA DE JUEGO ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. Mover Jugador
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            const sideDirection = new THREE.Vector3().crossVectors(camera.up, direction).normalize();
+
+            if (moveForward) camera.position.add(direction.multiplyScalar(player.speed));
+            if (moveBackward) camera.position.add(direction.multiplyScalar(-player.speed));
+            if (moveRight) camera.rotation.y -= player.rotationSpeed;
+            if (moveLeft) camera.rotation.y += player.rotationSpeed;
+
+            // Mantener altura (no volar)
+            camera.position.y = player.height;
+
+            // 2. Mover Balas
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.position.add(b.userData.velocity);
+
+                // Detectar Colisiones con Edificios
+                let hit = false;
+                for (let j = buildings.length - 1; j >= 0; j--) {
+                    let build = buildings[j];
+                    // Distancia simple (Hitbox circular)
+                    let dist = b.position.distanceTo(build.position);
+                    
+                    // Colisión aproximada
+                    if (dist < Math.max(build.scale.x, build.scale.z) / 1.5 + 1) {
+                        createExplosion(b.position, 0xff5500, 10); // Explosión de impacto
+                        createExplosion(b.position, 0x888888, 5);  // Humo
+                        
+                        // Eliminar bala
+                        scene.remove(b);
+                        bullets.splice(i, 1);
+                        hit = true;
+
+                        // Dañar edificio
+                        build.userData.hp--;
+                        // Flash blanco al golpear
+                        build.material.emissive.setHex(0xffffff);
+                        setTimeout(() => build.material.emissive.setHex(0x000000), 50);
+
+                        if (build.userData.hp <= 0) {
+                            destroyBuilding(build, j);
+                        }
+                        break;
+                    }
+                }
+                
+                // Eliminar balas lejanas
+                if (!hit && b.position.distanceTo(camera.position) > 200) {
+                    scene.remove(b);
+                    bullets.splice(i, 1);
+                }
             }
 
-            ctx.setTransform(1, 0, 0, 1, shakeX, shakeY); // Aplicar temblor
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-            // DIBUJAR FONDO
-            ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvasWidth, canvasHeight); // Cielo
-            ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, canvasHeight - 60, canvasWidth, 60); // Pasto
-
-            // LOGICA DEL JUEGO
-            updateMonster();
-            updateBuildings();
+            // 3. Partículas (Escombros)
             updateParticles();
-            gameState.frame++;
 
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // Resetear temblor
-            requestAnimationFrame(gameLoop);
-        }
-
-        // --- LÓGICA DEL MONSTRUO Y ATAQUE ---
-        function updateMonster() {
-            // Animación simple de correr
-            monster.y = monster.yBase + Math.sin(gameState.frame * 0.15) * 10;
-            
-            // Dibujar monstruo (con sombra)
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.font = `${monster.size}px Arial`; ctx.textAlign = "center";
-            ctx.fillText(monster.emoji, monster.x + monster.size/2 + 5, monster.y + monster.size + 5); // Sombra
-
-            ctx.fillStyle = "#000";
-            ctx.fillText(monster.emoji, monster.x + monster.size/2, monster.y + monster.size);
-
-            // Cooldown de ataque visual
-            if(monster.attackCooldown > 0) {
-                monster.attackCooldown--;
-                if(monster.attackCooldown <= 0) { monster.emoji = "🦖"; monster.isAttacking = false; }
-            }
-        }
-
-        // DETECTAR EL TAP/CLIC PARA ATACAR
-        canvas.addEventListener('pointerdown', performAttack);
-
-        function performAttack(e) {
-            if(gameState.paused || !gameState.running) return;
-
-            monster.isAttacking = true;
-            monster.emoji = monster.hasFire ? "🐲" : "🦕"; // Cambia emoji al atacar
-            monster.attackCooldown = 10; // Duración visual del ataque
-
-            // Efectos visuales del golpe
-            shakeIntensity = 15; // SACUDIDA FUERTE
-            if(monster.hasMegaBoom) createExplosion(monster.x + monster.attackRange, canvasHeight-80, "💥", 100);
-
-            let hitSomething = false;
-            // Chequear colisión con edificios en el rango de ataque
-            buildings.forEach(b => {
-                if(!b.destroyed && b.x < monster.x + monster.attackRange && b.x > monster.x - 50) {
-                    // GOLPE DIRECTO
-                    let damage = monster.attackPower;
-                    if(monster.hasFire) damage += 1; // Bonus de fuego
-                    
-                    b.health -= damage;
-                    hitSomething = true;
-                    
-                    // Texto de daño flotante
-                    createFloatingText(`-${damage}`, b.x + b.size/2, b.y, "#e74c3c", 30);
-
-                    if(b.health <= 0) {
-                        destroyBuilding(b);
-                    } else {
-                         // Efecto de golpe sin destruir
-                        createExplosion(b.x+b.size/2, b.y+b.size/2, "💨", 40);
-                    }
-                }
+            // 4. Civiles corriendo
+            civilians.forEach(civ => {
+                civ.position.add(civ.userData.direction.multiplyScalar(civ.userData.speed));
+                // Cambiar dirección random
+                if(Math.random() > 0.95) civ.userData.direction = new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+                // Si se alejan mucho, volver al centro
+                if(civ.position.length() > 200) civ.position.set(0,1,0);
             });
-            
-            // Si tenés fuego, daña un poco a los que están más lejos
-            if(monster.hasFire && hitSomething) {
-                 buildings.forEach(b => {
-                    if(!b.destroyed && b.x > monster.x + monster.attackRange && b.x < monster.x + monster.attackRange + 150) {
-                         b.health -= 0.5; // Daño quemadura
-                         createFloatingText("🔥", b.x + b.size/2, b.y - 20, "#e67e22", 20);
-                         if(b.health<=0) destroyBuilding(b);
-                    }
-                 });
-            }
+
+            renderer.render(scene, camera);
         }
 
-        function destroyBuilding(b) {
-            b.destroyed = true;
-            // EFECTOS JUGOSOS
-            shakeIntensity = 25; // Sacudida extra fuerte
-            createExplosion(b.x + b.size/2, b.y + b.size/2, monster.hasFire ? "🔥" : "🧱", b.size);
-            if(monster.hasMegaBoom) createExplosion(b.x + b.size/2, b.y, "💣", b.size*1.5);
+        // --- DESTRUCCIÓN ---
+        function destroyBuilding(building, index) {
+            // Efecto masivo
+            createExplosion(building.position, building.material.color.getHex(), 30); // Escombros del color del edificio
+            createExplosion(building.position, 0xff0000, 20); // Fuego
 
-            // RECOMPENSAS
-            let xpGain = b.maxHealth * 2;
-            gameState.score += b.maxHealth * 10;
-            gainXP(xpGain);
-            createFloatingText(`+${xpGain} XP!`, b.x + b.size/2, b.y - 50, "#f1c40f", 40); // Texto de XP grande
+            // Sacudir cámara (Screen Shake)
+            camera.position.y -= 2;
+            setTimeout(()=> camera.position.y += 2, 50);
 
-            // Aumentar velocidad un poquito
-            gameState.gameSpeed += 0.02;
+            // Eliminar edificio real
+            scene.remove(building);
+            buildings.splice(index, 1);
+
+            score++;
+            document.getElementById('score').innerText = score;
         }
 
+        function createExplosion(pos, color, count) {
+            const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const mat = new THREE.MeshBasicMaterial({ color: color });
 
-        // --- LÓGICA DE EDIFICIOS ---
-        function updateBuildings() {
-             // Generar
-            if (gameState.frame % Math.floor(120/gameState.gameSpeed) === 0) {
-                let types = [{e:"🏢", h:3}, {e:"🏠", h:1}, {e:"🏥", h:5}, {e:"🏯", h:8}];
-                let t = types[Math.floor(Math.random() * types.length)];
-                buildings.push({
-                    x: canvasWidth, y: canvasHeight - 70, type: t.e, size: 80 + t.h*5,
-                    health: t.h, maxHealth: t.h, destroyed: false
-                });
-            }
-            // Mover y Dibujar
-            for (let i = 0; i < buildings.length; i++) {
-                let b = buildings[i];
-                b.x -= gameState.gameSpeed;
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(geo, mat);
+                p.position.copy(pos);
+                // Dispersión aleatoria
+                p.position.x += (Math.random() - 0.5) * 5;
+                p.position.y += (Math.random() - 0.5) * 10;
+                p.position.z += (Math.random() - 0.5) * 5;
                 
-                let drawEmoji = b.destroyed ? (monster.hasFire ? "🔥" : "💩") : b.type;
-                let drawSize = b.destroyed ? b.size/1.5 : b.size;
-                
-                // Dibujar edificio
-                ctx.font = `${drawSize}px Arial`; ctx.textAlign = "center";
-                ctx.fillText(drawEmoji, b.x + b.size/2, b.y + b.size);
-
-                // Barra de vida del edificio (si está dañado)
-                if(!b.destroyed && b.health < b.maxHealth) {
-                    ctx.fillStyle = "red"; ctx.fillRect(b.x, b.y, b.size, 10);
-                    ctx.fillStyle = "green"; ctx.fillRect(b.x, b.y, b.size * (b.health/b.maxHealth), 10);
-                }
-
-                if (b.x < -150) { buildings.splice(i, 1); i--; }
+                // Velocidad
+                p.userData = {
+                    vel: new THREE.Vector3((Math.random()-0.5), (Math.random()), (Math.random()-0.5)),
+                    life: 60
+                };
+                scene.add(p);
+                particles.push(p);
             }
-        }
-
-        // --- SISTEMA DE PROGRESIÓN (XP y NIVEL) ---
-        function gainXP(amount) {
-            gameState.xp += amount;
-            if(gameState.xp >= gameState.xpToNextLevel) {
-                levelUp();
-            }
-            updateUI();
-        }
-
-        function levelUp() {
-            gameState.level++;
-            gameState.xp = 0;
-            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5); // Cuesta más subir
-            
-            gameState.paused = true; // PAUSAR JUEGO
-            showUpgradeScreen();
-        }
-
-        function updateUI() {
-            document.getElementById('score').innerText = "🏆 Puntos: " + gameState.score;
-            document.getElementById('level-badge').innerText = gameState.level;
-            let xpPercent = (gameState.xp / gameState.xpToNextLevel) * 100;
-            document.getElementById('xp-progress-fill').style.width = xpPercent + "%";
-            document.getElementById('xp-text').innerText = `XP: ${gameState.xp} / ${gameState.xpToNextLevel}`;
-        }
-
-        // --- SISTEMA DE MEJORAS (UPGRADES) ---
-        function showUpgradeScreen() {
-            const container = document.getElementById('cards-container');
-            container.innerHTML = ''; // Limpiar cartas viejas
-            
-            // Elegir 3 mejoras al azar
-            let choices = [];
-            let poolCopy = [...upgradePool];
-            for(let i=0; i<3; i++) {
-                if(poolCopy.length === 0) break;
-                let randomIndex = Math.floor(Math.random() * poolCopy.length);
-                choices.push(poolCopy[randomIndex]);
-                // Si es una mejora única (como fuego), sacarla del pool para no repetirla
-                if(['fire_breath', 'mega_boom'].includes(poolCopy[randomIndex].id)) {
-                     poolCopy.splice(randomIndex, 1);
-                }
-            }
-
-            choices.forEach(upgrade => {
-                let card = document.createElement('div');
-                card.className = 'upgrade-card';
-                card.innerHTML = `<div class="card-icon">${upgrade.icon}</div><div class="card-title">${upgrade.title}</div><div class="card-desc">${upgrade.desc}</div>`;
-                card.onclick = () => applyUpgrade(upgrade);
-                container.appendChild(card);
-            });
-
-            document.getElementById('upgrade-screen').style.display = 'flex';
-        }
-
-        function applyUpgrade(upgrade) {
-            document.getElementById('upgrade-screen').style.display = 'none';
-            
-            // APLICAR LOS EFECTOS
-            switch(upgrade.id) {
-                case 'big_size': monster.size *= 1.2; monster.attackRange *= 1.2; break;
-                case 'more_power': monster.attackPower += 1; break;
-                case 'fire_breath': monster.hasFire = true; break;
-                case 'mega_boom': monster.hasMegaBoom = true; break;
-                case 'fast_legs': gameState.gameSpeed += 1; break;
-            }
-            
-            // Eliminar mejoras únicas del pool principal si ya se obtuvieron
-            if(upgrade.id === 'fire_breath' || upgrade.id === 'mega_boom') {
-                 let idx = upgradePool.findIndex(u => u.id === upgrade.id);
-                 if(idx > -1) upgradePool.splice(idx, 1);
-            }
-
-            // Efecto visual de level up
-            createExplosion(canvasWidth/2, canvasHeight/2, "🆙", 200);
-            gameState.paused = false; // REANUDAR JUEGO
-            gameLoop();
-        }
-
-
-        // --- EFECTOS VISUALES (PARTÍCULAS Y TEXTO) ---
-        function createExplosion(x, y, icon, size) {
-            for(let i=0; i<15; i++) {
-                particles.push({
-                    x: x, y: y, type: 'particle', icon: icon, size: size/2 + Math.random()*size/2,
-                    vx: (Math.random()-0.5)*20, vy: (Math.random()-1)*20 - 5,
-                    life: 30, gravity: 1
-                });
-            }
-        }
-        function createFloatingText(text, x, y, color, size) {
-             particles.push({
-                x: x, y: y, type: 'text', text: text, color: color, size: size,
-                vx: 0, vy: -3, life: 40, gravity: 0
-            });
         }
 
         function updateParticles() {
-            for(let i=0; i<particles.length; i++) {
+            for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
-                ctx.globalAlpha = p.life / 40; // Desvanecer
-
-                if(p.type === 'particle') {
-                     ctx.font = `${p.size}px Arial`; ctx.textAlign = "center";
-                     ctx.fillText(p.icon, p.x, p.y);
-                } else if (p.type === 'text') {
-                     ctx.fillStyle = p.color; ctx.font = `bold ${p.size}px Arial`; ctx.textAlign = "center";
-                     ctx.fillText(p.text, p.x, p.y);
-                     ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeText(p.text, p.x, p.y);
-                }
+                p.position.add(p.userData.vel);
+                p.userData.vel.y -= 0.05; // Gravedad
+                p.userData.life--;
+                p.rotation.x += 0.1;
                 
-                if(p.life <= 0) { particles.splice(i, 1); i--; }
+                if (p.position.y < 0) p.userData.vel.y *= -0.5; // Rebotar en suelo
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
             }
-            ctx.globalAlpha = 1;
         }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
     </script>
 </body>
 </html>
