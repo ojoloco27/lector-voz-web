@@ -2,305 +2,415 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector de Texto a Voz ILIMITADO - Narrador Online Gratis</title>
-    <meta name="description" content="Convierte texto a audio con voces naturales. Herramienta 100% gratuita y sin límites de caracteres. Ideal para estudiantes y creadores.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KAIJU RUSH: Evolution</title>
     <style>
-        :root {
-            --primary: #6c5ce7;
-            --secondary: #a29bfe;
-            --bg: #f5f6fa;
-            --text: #2d3436;
-        }
+        /* ESTILOS BASE E INTERFAZ */
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            margin: 0; overflow: hidden; background-color: #87CEEB;
+            font-family: 'Arial Black', 'Arial Bold', sans-serif;
+            touch-action: none; user-select: none; -webkit-tap-highlight-color: transparent;
         }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-        }
-        h1 {
-            text-align: center;
-            color: var(--primary);
-            margin-top: 0;
-        }
-        .badge {
-            background: #ffeaa7;
-            color: #d63031;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
-        
-        /* CONTROLES */
-        .controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        select, input[type=range] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #dfe6e9;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-        label {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 5px;
-            display: block;
-        }
+        #game-container { position: relative; width: 100%; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; }
 
-        /* AREA DE TEXTO */
-        textarea {
-            width: 100%;
-            height: 200px;
-            padding: 15px;
-            border: 2px solid #dfe6e9;
-            border-radius: 10px;
-            font-size: 16px;
-            resize: vertical;
-            font-family: inherit;
-            box-sizing: border-box;
+        /* UI SUPERIOR (Nivel y XP) */
+        #top-ui {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; flex-direction: column; gap: 5px; pointer-events: none;
         }
-        textarea:focus {
-            border-color: var(--primary);
-            outline: none;
+        .stat-bar-container {
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 15px;
+            color: white; display: flex; align-items: center;
         }
+        #level-badge {
+            background: #f1c40f; color: #2c3e50; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 20px; border: 3px solid white; margin-right: 10px; box-shadow: 0 4px 0 #c27c0e;
+        }
+        #xp-progress-bg { flex-grow: 1; height: 20px; background: #34495e; border-radius: 10px; overflow: hidden; position: relative;}
+        #xp-progress-fill { height: 100%; width: 0%; background: linear-gradient(to right, #2ecc71, #00b894); transition: width 0.3s; }
+        #xp-text { position: absolute; width: 100%; text-align: center; top: 0; line-height: 20px; font-size: 12px; text-shadow: 1px 1px 2px black;}
+        #score { font-size: 24px; color: white; text-shadow: 3px 3px 0 #000; margin-top: 5px;}
 
-        /* BOTONES */
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
+        /* PANTALLA DE MEJORAS (LEVEL UP) */
+        #upgrade-screen {
+            display: none; /* Oculto al inicio */
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 50;
+            flex-direction: column; justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
         }
-        button {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; }}
+        #upgrade-screen h2 { color: #f1c40f; font-size: 36px; text-shadow: 3px 3px 0 #e67e22; margin-bottom: 30px; text-align: center;}
+        .upgrade-card {
+            background: linear-gradient(to bottom, #3498db, #2980b9);
+            width: 80%; max-width: 300px; margin: 10px; padding: 20px;
+            border-radius: 20px; border: 4px solid white; color: white;
+            text-align: center; cursor: pointer; box-shadow: 0 8px 0 #1a5276;
+            transform: scale(1); transition: transform 0.1s;
         }
-        button:active { transform: scale(0.98); }
-        .btn-play { background-color: var(--primary); color: white; }
-        .btn-stop { background-color: #ff7675; color: white; }
-        .btn-pause { background-color: #fdcb6e; color: #2d3436; }
+        .upgrade-card:active { transform: scale(0.95); box-shadow: 0 4px 0 #1a5276; }
+        .card-icon { font-size: 50px; margin-bottom: 10px; }
+        .card-title { font-size: 20px; margin-bottom: 5px; color: #f1c40f;}
+        .card-desc { font-size: 14px; }
 
-        /* REPRODUCTOR VISUAL */
-        .wave-box {
-            height: 40px;
-            background: #f1f2f6;
-            margin-top: 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+        /* PANTALLA INICIO */
+        #start-screen {
+             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+             background: rgba(0,0,0,0.7); color: white; display: flex;
+             flex-direction: column; justify-content: center; align-items: center; z-index: 40;
         }
-        .wave {
-            width: 5px;
-            height: 100%;
-            background: var(--secondary);
-            margin: 0 2px;
-            animation: wave 1s infinite;
-            display: none;
+        .big-btn {
+            background: #e74c3c; border: none; padding: 20px 40px; font-size: 28px; color: white;
+            border-radius: 50px; border: 4px solid white; font-family: inherit;
+            box-shadow: 0 10px 0 #c0392b; cursor: pointer; animation: pulse 1.5s infinite;
         }
-        .playing .wave { display: block; }
-        @keyframes wave {
-            0%, 100% { height: 10px; }
-            50% { height: 30px; }
-        }
-
-        /* ESPACIO ANUNCIO */
-        .ad-space {
-            width: 100%;
-            height: 100px;
-            background: #dfe6e9;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #636e72;
-            border-radius: 8px;
-            border: 2px dashed #b2bec3;
-        }
-
-        @media (max-width: 600px) {
-            .controls { grid-template-columns: 1fr; }
-        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); }}
     </style>
 </head>
 <body>
-
-    <div class="ad-space" style="max-width: 800px;">Anuncio Google Adsense (Header)</div>
-
-    <div class="container">
-        <h1>Lector de Voz <span class="badge">ILIMITADO</span></h1>
-        <p>Pega tu texto, elige una voz y escucha. Sin límites, sin pagar.</p>
-
-        <div class="controls">
-            <div>
-                <label>Seleccionar Voz:</label>
-                <select id="voiceSelect"><option>Cargando voces...</option></select>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="top-ui">
+            <div class="stat-bar-container">
+                <div id="level-badge">1</div>
+                <div id="xp-progress-bg">
+                    <div id="xp-progress-fill"></div>
+                    <div id="xp-text">XP: 0 / 10</div>
+                </div>
             </div>
-            <div>
-                <label>Velocidad:</label>
-                <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
-            </div>
+            <div id="score">🏆 Puntos: 0</div>
         </div>
 
-        <textarea id="textInput" placeholder="Escribe o pega aquí el texto que quieres escuchar..."></textarea>
-
-        <div class="wave-box" id="waveBox">
-            <div class="wave" style="animation-delay: 0s"></div>
-            <div class="wave" style="animation-delay: 0.1s"></div>
-            <div class="wave" style="animation-delay: 0.2s"></div>
-            <div class="wave" style="animation-delay: 0.3s"></div>
-            <div class="wave" style="animation-delay: 0.4s"></div>
+        <div id="start-screen">
+            <h1 style="font-size: 50px; color: #f1c40f; text-shadow: 4px 4px 0 black; text-align: center;">KAIJU RUSH<br>EVOLUTION</h1>
+            <p style="font-size: 20px;">¡TOCA RÁPIDO PARA DESTRUIR!</p>
+            <button class="big-btn" onclick="startGame()">¡EMPEZAR!</button>
         </div>
 
-        <div class="btn-group">
-            <button class="btn-play" onclick="speak()">▶ Escuchar</button>
-            <button class="btn-pause" onclick="pause()">⏸ Pausar</button>
-            <button class="btn-stop" onclick="stop()">⏹ Detener</button>
+        <div id="upgrade-screen">
+            <h2>¡SUBISTE DE NIVEL!</h2>
+            <p style="color:white;">Elige una mejora:</p>
+            <div id="cards-container">
+                </div>
         </div>
     </div>
 
-    <div class="ad-space" style="max-width: 800px;">Anuncio Google Adsense (Footer)</div>
-
     <script>
-        // LOGICA DE SINTESIS DE VOZ
-        const synth = window.speechSynthesis;
-        const textInput = document.getElementById('textInput');
-        const voiceSelect = document.getElementById('voiceSelect');
-        const rate = document.getElementById('rate');
-        const waveBox = document.getElementById('waveBox');
+        // --- CONFIGURACIÓN Y VARIABLES GLOBALES ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth, canvasHeight;
         
-        let voices = [];
+        let gameState = {
+            running: false, paused: false,
+            score: 0, level: 1, xp: 0, xpToNextLevel: 10,
+            gameSpeed: 4, frame: 0
+        };
 
-        function populateVoices() {
-            voices = synth.getVoices().sort(function (a, b) {
-                const aname = a.name.toUpperCase();
-                const bname = b.name.toUpperCase();
-                if (aname < bname) return -1;
-                else if (aname == bname) return 0;
-                return +1;
+        // EL MONSTRUO 🦖
+        let monster = {
+            x: 50, yBase: 0, y: 0, size: 110, emoji: "🦖",
+            attackPower: 1, // Daño por golpe
+            attackRange: 120, // Qué tan lejos pega
+            hasFire: false, // Mejora de fuego
+            hasMegaBoom: false, // Mejora de explosión grande
+            isAttacking: false, attackCooldown: 0
+        };
+
+        let buildings = [];
+        let particles = []; // Efectos visuales y textos flotantes
+        let shakeIntensity = 0; // Para el temblor de pantalla
+
+        // --- BASE DE DATOS DE MEJORAS ---
+        const upgradePool = [
+            {id: 'big_size', icon: '🍄', title: '¡CRECER!', desc: 'Tamaño +20%. Rango de ataque aumenta.'},
+            {id: 'more_power', icon: '💪', title: 'FUERZA BRUTA', desc: 'Daño de ataque +1. Destruye más rápido.'},
+            {id: 'fire_breath', icon: '🔥', title: 'ALIENTO DE FUEGO', desc: 'Tus ataques queman a los edificios cercanos.'},
+            {id: 'fast_legs', icon: '⚡', title: 'VELOCIDAD', desc: 'El juego va más rápido (Más puntos).'},
+            {id: 'mega_boom', icon: '💣', title: 'MEGA PISOTÓN', desc: 'Tus golpes crean explosiones gigantes.'}
+        ];
+
+        // --- INICIO Y BUCLE PRINCIPAL ---
+        function resizeCanvas() {
+            canvasWidth = window.innerWidth; canvasHeight = window.innerHeight;
+            canvas.width = canvasWidth; canvas.height = canvasHeight;
+            monster.yBase = canvasHeight - 150;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            gameState.running = true; gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameState.running || gameState.paused) return;
+
+            // Temblor de pantalla
+            let shakeX = 0, shakeY = 0;
+            if(shakeIntensity > 0) {
+                shakeX = (Math.random()-0.5)*shakeIntensity; shakeY = (Math.random()-0.5)*shakeIntensity;
+                shakeIntensity *= 0.9; // Reduce el temblor
+                if(shakeIntensity < 0.5) shakeIntensity = 0;
+            }
+
+            ctx.setTransform(1, 0, 0, 1, shakeX, shakeY); // Aplicar temblor
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // DIBUJAR FONDO
+            ctx.fillStyle = "#87CEEB"; ctx.fillRect(0, 0, canvasWidth, canvasHeight); // Cielo
+            ctx.fillStyle = "#2ecc71"; ctx.fillRect(0, canvasHeight - 60, canvasWidth, 60); // Pasto
+
+            // LOGICA DEL JUEGO
+            updateMonster();
+            updateBuildings();
+            updateParticles();
+            gameState.frame++;
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Resetear temblor
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- LÓGICA DEL MONSTRUO Y ATAQUE ---
+        function updateMonster() {
+            // Animación simple de correr
+            monster.y = monster.yBase + Math.sin(gameState.frame * 0.15) * 10;
+            
+            // Dibujar monstruo (con sombra)
+            ctx.fillStyle = "rgba(0,0,0,0.2)";
+            ctx.font = `${monster.size}px Arial`; ctx.textAlign = "center";
+            ctx.fillText(monster.emoji, monster.x + monster.size/2 + 5, monster.y + monster.size + 5); // Sombra
+
+            ctx.fillStyle = "#000";
+            ctx.fillText(monster.emoji, monster.x + monster.size/2, monster.y + monster.size);
+
+            // Cooldown de ataque visual
+            if(monster.attackCooldown > 0) {
+                monster.attackCooldown--;
+                if(monster.attackCooldown <= 0) { monster.emoji = "🦖"; monster.isAttacking = false; }
+            }
+        }
+
+        // DETECTAR EL TAP/CLIC PARA ATACAR
+        canvas.addEventListener('pointerdown', performAttack);
+
+        function performAttack(e) {
+            if(gameState.paused || !gameState.running) return;
+
+            monster.isAttacking = true;
+            monster.emoji = monster.hasFire ? "🐲" : "🦕"; // Cambia emoji al atacar
+            monster.attackCooldown = 10; // Duración visual del ataque
+
+            // Efectos visuales del golpe
+            shakeIntensity = 15; // SACUDIDA FUERTE
+            if(monster.hasMegaBoom) createExplosion(monster.x + monster.attackRange, canvasHeight-80, "💥", 100);
+
+            let hitSomething = false;
+            // Chequear colisión con edificios en el rango de ataque
+            buildings.forEach(b => {
+                if(!b.destroyed && b.x < monster.x + monster.attackRange && b.x > monster.x - 50) {
+                    // GOLPE DIRECTO
+                    let damage = monster.attackPower;
+                    if(monster.hasFire) damage += 1; // Bonus de fuego
+                    
+                    b.health -= damage;
+                    hitSomething = true;
+                    
+                    // Texto de daño flotante
+                    createFloatingText(`-${damage}`, b.x + b.size/2, b.y, "#e74c3c", 30);
+
+                    if(b.health <= 0) {
+                        destroyBuilding(b);
+                    } else {
+                         // Efecto de golpe sin destruir
+                        createExplosion(b.x+b.size/2, b.y+b.size/2, "💨", 40);
+                    }
+                }
             });
             
-            voiceSelect.innerHTML = '';
-            // Priorizar español
-            const selectedIndex = voices.findIndex(v => v.lang.includes('es') || v.lang.includes('ES'));
+            // Si tenés fuego, daña un poco a los que están más lejos
+            if(monster.hasFire && hitSomething) {
+                 buildings.forEach(b => {
+                    if(!b.destroyed && b.x > monster.x + monster.attackRange && b.x < monster.x + monster.attackRange + 150) {
+                         b.health -= 0.5; // Daño quemadura
+                         createFloatingText("🔥", b.x + b.size/2, b.y - 20, "#e67e22", 20);
+                         if(b.health<=0) destroyBuilding(b);
+                    }
+                 });
+            }
+        }
 
-            voices.forEach((voice, index) => {
-                const option = document.createElement('option');
-                option.textContent = `${voice.name} (${voice.lang})`;
-                option.setAttribute('data-lang', voice.lang);
-                option.setAttribute('data-name', voice.name);
-                voiceSelect.appendChild(option);
+        function destroyBuilding(b) {
+            b.destroyed = true;
+            // EFECTOS JUGOSOS
+            shakeIntensity = 25; // Sacudida extra fuerte
+            createExplosion(b.x + b.size/2, b.y + b.size/2, monster.hasFire ? "🔥" : "🧱", b.size);
+            if(monster.hasMegaBoom) createExplosion(b.x + b.size/2, b.y, "💣", b.size*1.5);
+
+            // RECOMPENSAS
+            let xpGain = b.maxHealth * 2;
+            gameState.score += b.maxHealth * 10;
+            gainXP(xpGain);
+            createFloatingText(`+${xpGain} XP!`, b.x + b.size/2, b.y - 50, "#f1c40f", 40); // Texto de XP grande
+
+            // Aumentar velocidad un poquito
+            gameState.gameSpeed += 0.02;
+        }
+
+
+        // --- LÓGICA DE EDIFICIOS ---
+        function updateBuildings() {
+             // Generar
+            if (gameState.frame % Math.floor(120/gameState.gameSpeed) === 0) {
+                let types = [{e:"🏢", h:3}, {e:"🏠", h:1}, {e:"🏥", h:5}, {e:"🏯", h:8}];
+                let t = types[Math.floor(Math.random() * types.length)];
+                buildings.push({
+                    x: canvasWidth, y: canvasHeight - 70, type: t.e, size: 80 + t.h*5,
+                    health: t.h, maxHealth: t.h, destroyed: false
+                });
+            }
+            // Mover y Dibujar
+            for (let i = 0; i < buildings.length; i++) {
+                let b = buildings[i];
+                b.x -= gameState.gameSpeed;
+                
+                let drawEmoji = b.destroyed ? (monster.hasFire ? "🔥" : "💩") : b.type;
+                let drawSize = b.destroyed ? b.size/1.5 : b.size;
+                
+                // Dibujar edificio
+                ctx.font = `${drawSize}px Arial`; ctx.textAlign = "center";
+                ctx.fillText(drawEmoji, b.x + b.size/2, b.y + b.size);
+
+                // Barra de vida del edificio (si está dañado)
+                if(!b.destroyed && b.health < b.maxHealth) {
+                    ctx.fillStyle = "red"; ctx.fillRect(b.x, b.y, b.size, 10);
+                    ctx.fillStyle = "green"; ctx.fillRect(b.x, b.y, b.size * (b.health/b.maxHealth), 10);
+                }
+
+                if (b.x < -150) { buildings.splice(i, 1); i--; }
+            }
+        }
+
+        // --- SISTEMA DE PROGRESIÓN (XP y NIVEL) ---
+        function gainXP(amount) {
+            gameState.xp += amount;
+            if(gameState.xp >= gameState.xpToNextLevel) {
+                levelUp();
+            }
+            updateUI();
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.xp = 0;
+            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5); // Cuesta más subir
+            
+            gameState.paused = true; // PAUSAR JUEGO
+            showUpgradeScreen();
+        }
+
+        function updateUI() {
+            document.getElementById('score').innerText = "🏆 Puntos: " + gameState.score;
+            document.getElementById('level-badge').innerText = gameState.level;
+            let xpPercent = (gameState.xp / gameState.xpToNextLevel) * 100;
+            document.getElementById('xp-progress-fill').style.width = xpPercent + "%";
+            document.getElementById('xp-text').innerText = `XP: ${gameState.xp} / ${gameState.xpToNextLevel}`;
+        }
+
+        // --- SISTEMA DE MEJORAS (UPGRADES) ---
+        function showUpgradeScreen() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = ''; // Limpiar cartas viejas
+            
+            // Elegir 3 mejoras al azar
+            let choices = [];
+            let poolCopy = [...upgradePool];
+            for(let i=0; i<3; i++) {
+                if(poolCopy.length === 0) break;
+                let randomIndex = Math.floor(Math.random() * poolCopy.length);
+                choices.push(poolCopy[randomIndex]);
+                // Si es una mejora única (como fuego), sacarla del pool para no repetirla
+                if(['fire_breath', 'mega_boom'].includes(poolCopy[randomIndex].id)) {
+                     poolCopy.splice(randomIndex, 1);
+                }
+            }
+
+            choices.forEach(upgrade => {
+                let card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.innerHTML = `<div class="card-icon">${upgrade.icon}</div><div class="card-title">${upgrade.title}</div><div class="card-desc">${upgrade.desc}</div>`;
+                card.onclick = () => applyUpgrade(upgrade);
+                container.appendChild(card);
             });
 
-            if(selectedIndex !== -1) voiceSelect.selectedIndex = selectedIndex;
+            document.getElementById('upgrade-screen').style.display = 'flex';
         }
 
-        populateVoices();
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = populateVoices;
+        function applyUpgrade(upgrade) {
+            document.getElementById('upgrade-screen').style.display = 'none';
+            
+            // APLICAR LOS EFECTOS
+            switch(upgrade.id) {
+                case 'big_size': monster.size *= 1.2; monster.attackRange *= 1.2; break;
+                case 'more_power': monster.attackPower += 1; break;
+                case 'fire_breath': monster.hasFire = true; break;
+                case 'mega_boom': monster.hasMegaBoom = true; break;
+                case 'fast_legs': gameState.gameSpeed += 1; break;
+            }
+            
+            // Eliminar mejoras únicas del pool principal si ya se obtuvieron
+            if(upgrade.id === 'fire_breath' || upgrade.id === 'mega_boom') {
+                 let idx = upgradePool.findIndex(u => u.id === upgrade.id);
+                 if(idx > -1) upgradePool.splice(idx, 1);
+            }
+
+            // Efecto visual de level up
+            createExplosion(canvasWidth/2, canvasHeight/2, "🆙", 200);
+            gameState.paused = false; // REANUDAR JUEGO
+            gameLoop();
         }
 
-        function speak() {
-            if (synth.speaking) {
-                // Si estaba pausado, reanudar
-                if(synth.paused) {
-                    synth.resume();
-                    waveBox.classList.add('playing');
-                    return;
+
+        // --- EFECTOS VISUALES (PARTÍCULAS Y TEXTO) ---
+        function createExplosion(x, y, icon, size) {
+            for(let i=0; i<15; i++) {
+                particles.push({
+                    x: x, y: y, type: 'particle', icon: icon, size: size/2 + Math.random()*size/2,
+                    vx: (Math.random()-0.5)*20, vy: (Math.random()-1)*20 - 5,
+                    life: 30, gravity: 1
+                });
+            }
+        }
+        function createFloatingText(text, x, y, color, size) {
+             particles.push({
+                x: x, y: y, type: 'text', text: text, color: color, size: size,
+                vx: 0, vy: -3, life: 40, gravity: 0
+            });
+        }
+
+        function updateParticles() {
+            for(let i=0; i<particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.life--;
+                ctx.globalAlpha = p.life / 40; // Desvanecer
+
+                if(p.type === 'particle') {
+                     ctx.font = `${p.size}px Arial`; ctx.textAlign = "center";
+                     ctx.fillText(p.icon, p.x, p.y);
+                } else if (p.type === 'text') {
+                     ctx.fillStyle = p.color; ctx.font = `bold ${p.size}px Arial`; ctx.textAlign = "center";
+                     ctx.fillText(p.text, p.x, p.y);
+                     ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeText(p.text, p.x, p.y);
                 }
-                synth.cancel(); // Si ya hablaba, reiniciar
-            }
-
-            if (textInput.value !== '') {
-                const speakText = new SpeechSynthesisUtterance(textInput.value);
                 
-                const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
-                const selectedVoice = voices.find(v => v.name === selectedOption);
-                
-                speakText.voice = selectedVoice;
-                speakText.rate = rate.value;
-
-                speakText.onend = e => {
-                    waveBox.classList.remove('playing');
-                };
-                
-                speakText.onerror = e => {
-                    console.error('Error al hablar');
-                    waveBox.classList.remove('playing');
-                };
-
-                synth.speak(speakText);
-                waveBox.classList.add('playing');
+                if(p.life <= 0) { particles.splice(i, 1); i--; }
             }
-        }
-
-        function pause() {
-            if(synth.speaking && !synth.paused){
-                synth.pause();
-                waveBox.classList.remove('playing');
-            }
-        }
-
-        function stop() {
-            synth.cancel();
-            waveBox.classList.remove('playing');
+            ctx.globalAlpha = 1;
         }
     </script>
-<div class="container" style="margin-top: 30px; text-align: left; line-height: 1.6;">
-    <h2>¿Cómo convertir texto a voz gratis y sin límites?</h2>
-    <p>Bienvenido a <strong>LectorIlimitado.com</strong> (o el nombre que hayas puesto), la mejor herramienta online para pasar texto a audio de forma natural. A diferencia de otras plataformas que cobran suscripciones mensuales, nuestra tecnología utiliza las voces neuronales ya instaladas en tu navegador para ofrecerte una síntesis de voz fluida y 100% gratuita.</p>
-    
-    <h3>Características Principales:</h3>
-    <ul>
-        <li><strong>Sin Límite de Caracteres:</strong> Puedes pegar libros enteros, apuntes de la facultad o guiones largos.</li>
-        <li><strong>Voces Naturales:</strong> Detectamos automáticamente las voces en Español (España y Latino) instaladas en tu dispositivo.</li>
-        <li><strong>Privacidad Total:</strong> Tu texto no se envía a ningún servidor. La conversión ocurre localmente en tu computadora o celular.</li>
-        <li><strong>Ideal para Creadores:</strong> Úsalo para narrar videos de TikTok, Instagram Reels o YouTube sin usar tu propia voz.</li>
-    </ul>
-
-    <h3>Preguntas Frecuentes</h3>
-    <p><strong>¿Es realmente gratis?</strong><br>Sí, esta herramienta es de uso libre y se mantiene gracias a la publicidad.</p>
-    <p><strong>¿Puedo usar los audios comercialmente?</strong><br>Sí, las voces generadas por el navegador suelen ser libres de derechos para uso en redes sociales, aunque recomendamos verificar las políticas de Microsoft/Google según tu sistema operativo.</p>
-</div>
-
-<footer style="margin-top: 50px; text-align: center; font-size: 12px; color: #888; padding-bottom: 20px;">
-    <p>© 2026 Lector de Voz Online. Todos los derechos reservados.</p>
-    <p>
-        <a href="politica.html" style="color: #666;">Política de Privacidad</a> | 
-        <a href="mailto:contacto@tudominio.com" style="color: #666;">Contacto</a>
-    </p>
-</footer>
 </body>
 </html>
