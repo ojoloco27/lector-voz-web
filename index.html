@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Texto a Voz ILIMITADO - Narrador Online Gratis</title>
+    <meta name="description" content="Convierte texto a audio con voces naturales. Herramienta 100% gratuita y sin límites de caracteres. Ideal para estudiantes y creadores.">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --bg: #f5f6fa;
+            --text: #2d3436;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-top: 0;
+        }
+        .badge {
+            background: #ffeaa7;
+            color: #d63031;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        
+        /* CONTROLES */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        select, input[type=range] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        label {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        /* AREA DE TEXTO */
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        /* BOTONES */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-play { background-color: var(--primary); color: white; }
+        .btn-stop { background-color: #ff7675; color: white; }
+        .btn-pause { background-color: #fdcb6e; color: #2d3436; }
+
+        /* REPRODUCTOR VISUAL */
+        .wave-box {
+            height: 40px;
+            background: #f1f2f6;
+            margin-top: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .wave {
+            width: 5px;
+            height: 100%;
+            background: var(--secondary);
+            margin: 0 2px;
+            animation: wave 1s infinite;
+            display: none;
+        }
+        .playing .wave { display: block; }
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 30px; }
+        }
+
+        /* ESPACIO ANUNCIO */
+        .ad-space {
+            width: 100%;
+            height: 100px;
+            background: #dfe6e9;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #636e72;
+            border-radius: 8px;
+            border: 2px dashed #b2bec3;
+        }
+
+        @media (max-width: 600px) {
+            .controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ad-space" style="max-width: 800px;">Anuncio Google Adsense (Header)</div>
+
+    <div class="container">
+        <h1>Lector de Voz <span class="badge">ILIMITADO</span></h1>
+        <p>Pega tu texto, elige una voz y escucha. Sin límites, sin pagar.</p>
+
+        <div class="controls">
+            <div>
+                <label>Seleccionar Voz:</label>
+                <select id="voiceSelect"><option>Cargando voces...</option></select>
+            </div>
+            <div>
+                <label>Velocidad:</label>
+                <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
+            </div>
+        </div>
+
+        <textarea id="textInput" placeholder="Escribe o pega aquí el texto que quieres escuchar..."></textarea>
+
+        <div class="wave-box" id="waveBox">
+            <div class="wave" style="animation-delay: 0s"></div>
+            <div class="wave" style="animation-delay: 0.1s"></div>
+            <div class="wave" style="animation-delay: 0.2s"></div>
+            <div class="wave" style="animation-delay: 0.3s"></div>
+            <div class="wave" style="animation-delay: 0.4s"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-play" onclick="speak()">▶ Escuchar</button>
+            <button class="btn-pause" onclick="pause()">⏸ Pausar</button>
+            <button class="btn-stop" onclick="stop()">⏹ Detener</button>
+        </div>
+    </div>
+
+    <div class="ad-space" style="max-width: 800px;">Anuncio Google Adsense (Footer)</div>
+
+    <script>
+        // LOGICA DE SINTESIS DE VOZ
+        const synth = window.speechSynthesis;
+        const textInput = document.getElementById('textInput');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const rate = document.getElementById('rate');
+        const waveBox = document.getElementById('waveBox');
+        
+        let voices = [];
+
+        function populateVoices() {
+            voices = synth.getVoices().sort(function (a, b) {
+                const aname = a.name.toUpperCase();
+                const bname = b.name.toUpperCase();
+                if (aname < bname) return -1;
+                else if (aname == bname) return 0;
+                return +1;
+            });
+            
+            voiceSelect.innerHTML = '';
+            // Priorizar español
+            const selectedIndex = voices.findIndex(v => v.lang.includes('es') || v.lang.includes('ES'));
+
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-lang', voice.lang);
+                option.setAttribute('data-name', voice.name);
+                voiceSelect.appendChild(option);
+            });
+
+            if(selectedIndex !== -1) voiceSelect.selectedIndex = selectedIndex;
+        }
+
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+
+        function speak() {
+            if (synth.speaking) {
+                // Si estaba pausado, reanudar
+                if(synth.paused) {
+                    synth.resume();
+                    waveBox.classList.add('playing');
+                    return;
+                }
+                synth.cancel(); // Si ya hablaba, reiniciar
+            }
+
+            if (textInput.value !== '') {
+                const speakText = new SpeechSynthesisUtterance(textInput.value);
+                
+                const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
+                const selectedVoice = voices.find(v => v.name === selectedOption);
+                
+                speakText.voice = selectedVoice;
+                speakText.rate = rate.value;
+
+                speakText.onend = e => {
+                    waveBox.classList.remove('playing');
+                };
+                
+                speakText.onerror = e => {
+                    console.error('Error al hablar');
+                    waveBox.classList.remove('playing');
+                };
+
+                synth.speak(speakText);
+                waveBox.classList.add('playing');
+            }
+        }
+
+        function pause() {
+            if(synth.speaking && !synth.paused){
+                synth.pause();
+                waveBox.classList.remove('playing');
+            }
+        }
+
+        function stop() {
+            synth.cancel();
+            waveBox.classList.remove('playing');
+        }
+    </script>
+<div class="container" style="margin-top: 30px; text-align: left; line-height: 1.6;">
+    <h2>¿Cómo convertir texto a voz gratis y sin límites?</h2>
+    <p>Bienvenido a <strong>LectorIlimitado.com</strong> (o el nombre que hayas puesto), la mejor herramienta online para pasar texto a audio de forma natural. A diferencia de otras plataformas que cobran suscripciones mensuales, nuestra tecnología utiliza las voces neuronales ya instaladas en tu navegador para ofrecerte una síntesis de voz fluida y 100% gratuita.</p>
+    
+    <h3>Características Principales:</h3>
+    <ul>
+        <li><strong>Sin Límite de Caracteres:</strong> Puedes pegar libros enteros, apuntes de la facultad o guiones largos.</li>
+        <li><strong>Voces Naturales:</strong> Detectamos automáticamente las voces en Español (España y Latino) instaladas en tu dispositivo.</li>
+        <li><strong>Privacidad Total:</strong> Tu texto no se envía a ningún servidor. La conversión ocurre localmente en tu computadora o celular.</li>
+        <li><strong>Ideal para Creadores:</strong> Úsalo para narrar videos de TikTok, Instagram Reels o YouTube sin usar tu propia voz.</li>
+    </ul>
+
+    <h3>Preguntas Frecuentes</h3>
+    <p><strong>¿Es realmente gratis?</strong><br>Sí, esta herramienta es de uso libre y se mantiene gracias a la publicidad.</p>
+    <p><strong>¿Puedo usar los audios comercialmente?</strong><br>Sí, las voces generadas por el navegador suelen ser libres de derechos para uso en redes sociales, aunque recomendamos verificar las políticas de Microsoft/Google según tu sistema operativo.</p>
+</div>
+
+<footer style="margin-top: 50px; text-align: center; font-size: 12px; color: #888; padding-bottom: 20px;">
+    <p>© 2026 Lector de Voz Online. Todos los derechos reservados.</p>
+    <p>
+        <a href="politica.html" style="color: #666;">Política de Privacidad</a> | 
+        <a href="mailto:contacto@tudominio.com" style="color: #666;">Contacto</a>
+    </p>
+</footer>
+</body>
+</html>
